@@ -11,7 +11,17 @@ async function main(): Promise<void> {
   const cfg = loadConfig();
 
   await migrate();
-  await mkdir(cfg.OBSIDIAN_VAULT_PATH, { recursive: true });
+
+  // Инициализация Markdown-памяти НЕ критична: если каталог недоступен на запись,
+  // логируем предупреждение и продолжаем — бот не должен падать из-за памяти.
+  try {
+    await mkdir(cfg.OBSIDIAN_VAULT_PATH, { recursive: true });
+  } catch (err) {
+    logger.warn(
+      { err: (err as Error).message, path: cfg.OBSIDIAN_VAULT_PATH },
+      'Каталог памяти недоступен на запись — журналы в Markdown будут отключены, бот продолжает работу',
+    );
+  }
 
   // DEV_FAKE_BOT_INFO=true — только для локального смоук-теста без сети к Telegram
   // (в production игнорируется: identity всегда запрашивается у Telegram).
